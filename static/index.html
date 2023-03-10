@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width" />
     <meta name="license" content="
         Copyright 2013 Abram Hindle
+        Copyright 2023 Javin Vora
         
         Licensed under the Apache License, Version 2.0 (the "License");
         you may not use this file except in compliance with the License.
@@ -39,7 +40,11 @@ function sendJSONXMLHTTPRequest(url, objects, callback) {
             try {
                 if (xhr.status==200) {
                     //XXX: parse some JSON from the request!
+                    // parsing the json obtained from the response of xhr
+                    parsedReq = JSON.parse(xhr.response)
                     //XXX: Pass the data to the callback!
+                    // calling back on the parsed reponse
+                    callback(parsedReq)
                 }
             } 
             catch(e) {
@@ -47,15 +52,34 @@ function sendJSONXMLHTTPRequest(url, objects, callback) {
             }
         }
     };
+
     //XXX: POST to a URL
+    // we dont have to use post for /world
+    // we do not want to misuse GET AND POST
+    if (url == '/world'){
+        xhr.open('GET', url, true)
+    }
+    // should not POST to /world to retrieve the world
+    // we do not want to misuse GET AND POST
+    else{
+        // sending a POST to the Url here
+        xhr.open('POST', url, true)
+    }
     //XXX: set the mimetype and the accept headers!
     // Remember to use application/json !
+    // setting the request headers for the content type as well as for the accept
+    xhr.setRequestHeader('Content-Type', 'application/json')
+    xhr.setRequestHeader('Accept', 'application/json')
+    // sending the objects which are stringified
+    mainContent = JSON.stringify(objects)
+    xhr.send(mainContent)
 }
 
 
 world = {};
 
 //XXX: TODO Make this prettier!
+// changing the radius and the colour of the circles that are being drawn on the canvas
 function drawCircle(context,entity) {
     with(context) {
         beginPath();              
@@ -74,8 +98,9 @@ function prepEntity(entity) {
     if (!entity["colour"]) {
         entity["colour"] = "#FF0000";
     }
+    // changed the radius of the circles here
     if (!entity["radius"]) {
-        entity["radius"] = 50;
+        entity["radius"] = 80;
     }
     return entity;
 }
@@ -138,7 +163,20 @@ function addEntity(entity, data) {
     world[entity] = data;
     drawNextFrame(); // (but should we?)
     //XXX: Send a XHTML Request that updates the entity you just  modified!
-
+    // forming the appropriate main_url here
+    main_url = '/entity'
+    main_url = main_url+'/'+entity
+    // calling the sendJSONXMLHTTPRequest function here
+    sendJSONXMLHTTPRequest(main_url, data, (main_data) => {
+        // printing messages to the console log here
+        if(main_data == true){
+            console.log("The main data is" + main_data)
+        }
+        // printing messages to the console log here
+        else{
+            console.log("something went")
+        }
+    })
 }
 
 var counter = 0;
@@ -246,30 +284,36 @@ mouse = (function() {
 
 // Add the application specific mouse listeners!
 //XXX: TODO Make these prettier!
+// changing the radius and the colour of the circles that are being drawn on the canvas
 mouse.mousedowners.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'blue'});
+    addEntityWithoutName({'x':x,'y':y,'colour':'white', 'radius': 80});
 });
 
 mouse.mouseuppers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'red'});
+    addEntityWithoutName({'x':x,'y':y,'colour':'yellow', 'radius': 80});
 });
 
 mouse.mousedraggers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'green',
-                          'radius':10});
+    addEntityWithoutName({'x':x,'y':y,'colour':'blue', 'radius': 30});
 });
 
 
 function update() {
     //XXX: TODO Get the world from the webservice using a XMLHTTPRequest
+    drawNextFrame();
+    // calling the sendJSONXMLHTTPRequest function
+    sendJSONXMLHTTPRequest('/world', null, sub_update)
     drawFrame();
+}
+
+function sub_update(message){
+    world = message
 }
 
 // 30 frames per second
 setInterval( update, 1000/30.0);
 
-
-
     </script>
+    
 </body>
 </html>
