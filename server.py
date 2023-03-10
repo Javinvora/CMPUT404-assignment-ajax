@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 # Copyright 2013 Abram Hindle
-# 
+# Copyright 2023 Javin Vora
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -23,7 +24,9 @@
 
 import flask
 from flask import Flask, request
+from flask import redirect
 import json
+
 app = Flask(__name__)
 app.debug = True
 
@@ -74,27 +77,40 @@ def flask_post_json():
 @app.route("/")
 def hello():
     '''Return something coherent here.. perhaps redirect to /static/index.html '''
-    return None
+    # using the redirect fucntion to the appropriate location of the index.html file
+    return redirect('/static/index.html', 301)
 
 @app.route("/entity/<entity>", methods=['POST','PUT'])
 def update(entity):
     '''update the entities via this interface'''
-    return None
+    # obtaining the returned data from the method flask_post_json()
+    returnedData = flask_post_json()
+    for key in returnedData:
+        value = returnedData[key]
+        # calling the update method of the World class to update the entity visa this interface
+        myWorld.update(entity, key, value)
+     # returning the updated entity when I get from the get() method in the World class
+    return myWorld.get(entity)
 
 @app.route("/world", methods=['POST','GET'])    
 def world():
     '''you should probably return the world here'''
-    return None
+    # returning the world that is returned from the world() method in the World class
+    return myWorld.world()
 
 @app.route("/entity/<entity>")    
 def get_entity(entity):
     '''This is the GET version of the entity interface, return a representation of the entity'''
-    return None
+    # returning the entity that I get from the get() method in the World class
+    return myWorld.get(entity)
 
 @app.route("/clear", methods=['POST','GET'])
 def clear():
     '''Clear the world out!'''
-    return None
+    # clearing the world by calling the clear method() in the World class
+    myWorld.clear()
+    # returning the cleared world by calling the world() method in the World class
+    return myWorld.world()
 
 if __name__ == "__main__":
     app.run()
